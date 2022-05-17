@@ -1,23 +1,12 @@
 <script lang="ts">
 	import { notifications, removeNote } from '$lib/stores';
-	import { Toast, ToastBody, ToastHeader } from 'sveltestrap';
+	//import { Toast, ToastBody, ToastHeader } from 'sveltestrap';
 
 	import { slide } from 'svelte/transition';
 
-	let className = '';
-	export { className as class };
-	export let position:
-		| 'top-left'
-		| 'top'
-		| 'top-center'
-		| 'top-right'
-		| 'left'
-		| 'right'
-		| 'center'
-		| 'bottom-left'
-		| 'bottom'
-		| 'bottom-center'
-		| 'bottom-right' = 'top-right';
+	import { Position } from '$lib/types';
+
+	export let position: Position = Position.TopLeft;
 	let classes;
 	function toClassName(value) {
 		let result = '';
@@ -40,77 +29,30 @@
 	function classnames(...args) {
 		return args.map(toClassName).filter(Boolean).join(' ');
 	}
+
 	$: switch (position) {
-		case 'top-left':
-			classes = classnames(
-				className,
-				'toast-container',
-				'position-absolute',
-				'p-3',
-				'top-0',
-				'start-0'
-			);
+		case Position.TopLeft:
+			classes = classnames('p-3', 'top-0', 'start-0');
 			break;
-		case 'top-center':
-		case 'top':
-			classes = classnames(
-				className,
-				'toast-container',
-				'position-absolute',
-				'p-3',
-				'top-0',
-				'start-50',
-				'translate-middle-x'
-			);
+		case Position.TopCenter:
+		case Position.Top:
+			classes = classnames('p-3', 'top-0', 'start-50', 'translate-middle-x');
 			break;
-		case 'left':
-			classes = classnames(
-				className,
-				'toast-container',
-				'position-absolute',
-				'p-3',
-				'top-50',
-				'start-0',
-				'translate-middle-y'
-			);
+		case Position.Left:
+			classes = classnames('p-3', 'top-50', 'start-0', 'translate-middle-y');
 			break;
-		case 'right':
-			classes = classnames(
-				className,
-				'toast-container',
-				'position-absolute',
-				'p-3',
-				'top-50',
-				'end-0',
-				'translate-middle-y'
-			);
+		case Position.Right:
+			classes = classnames('p-3', 'top-50', 'end-0', 'translate-middle-y');
 			break;
-		case 'center':
-			classes = classnames(
-				className,
-				'toast-container',
-				'position-absolute',
-				'p-3',
-				'top-50',
-				'start-50',
-				'translate-middle'
-			);
+		case Position.Center:
+			classes = classnames('p-3', 'top-50', 'start-50', 'translate-middle');
 			break;
-		case 'bottom-left':
-			classes = classnames(
-				className,
-				'toast-container',
-				'position-absolute',
-				'p-3',
-				'bottom-0',
-				'start-0'
-			);
+		case Position.BottomLeft:
+			classes = classnames('p-3', 'bottom-0', 'start-0');
 			break;
-		case 'bottom-center':
-		case 'bottom':
+		case Position.BottomCenter:
+		case Position.Bottom:
 			classes = classnames(
-				className,
-				'toast-container',
 				'position-absolute',
 				'p-3',
 				'bottom-0',
@@ -118,39 +60,64 @@
 				'translate-middle-x'
 			);
 			break;
-		case 'bottom-right':
-			classes = classnames(
-				className,
-				'toast-container',
-				'position-absolute',
-				'p-3',
-				'bottom-0',
-				'end-0'
-			);
+		case Position.BottomRight:
+			classes = classnames('p-3', 'bottom-0', 'end-0');
 			break;
-		case 'top-right':
+		case Position.TopRight:
 		default:
-			classes = classnames(
-				className,
-				'toast-container',
-				'position-absolute',
-				'p-3',
-				'top-0',
-				'end-0'
-			);
+			classes = classnames('p-3', 'top-0', 'end-0');
 			break;
+	}
+
+	const textLight = {
+		primary: true,
+		secondary: true,
+		danger: true,
+		success: true,
+		warning: false,
+		info: false,
+		light: false
+	};
+
+	function typeToClass(type: string) {
+		let classes = [];
+		if (type) {
+			classes.push(`bg-${type}`);
+
+			if (textLight[type]) {
+				classes.push('text-light');
+			} else {
+				classes.push('text-dark');
+			}
+			return classes.join(' ');
+		}
+		return '';
 	}
 </script>
 
-<div class={classes}>
+<div class={classes} class:position-absolute={true}>
 	{#each $notifications as notification (notification.id)}
-		<div transition:slide>
-			<Toast class="me-1">
-				<ToastHeader toggle={() => removeNote(notification.id)}>
+		<div
+			class={`card m-1 opacity-50 ${typeToClass(notification.type)}`}
+			transition:slide
+			style="max-width: 24rem; min-width: 12rem;"
+		>
+			<div class="card-header d-flex">
+				<strong class="me-auto">
 					{notification.title}
-				</ToastHeader>
-				<ToastBody>{notification.body}</ToastBody>
-			</Toast>
+				</strong>
+				<button
+					type="button"
+					class="btn-close"
+					class:btn-close-white={textLight[notification.type]}
+					on:click={() => {
+						removeNote(notification.id);
+					}}
+				/>
+			</div>
+			{#if notification.body}
+				<div class="card-body">{notification.body} timeout = {notification.timeout}</div>
+			{/if}
 		</div>
 	{/each}
 </div>
